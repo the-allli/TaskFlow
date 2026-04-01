@@ -1,0 +1,136 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
+@import "tailwindcss";
+
+* {
+  font-family: "Outfit", sans-serif;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@layer base {
+  :root {
+    --funny-color: 0, 0, 0;
+  }
+
+  .dark {
+    --funny-color: 255, 255, 255;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  ::-webkit-scrollbar {
+    width: 0.5rem;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: #e5e7eb;
+  }
+
+  .dark ::-webkit-scrollbar-track {
+    background-color: #1c1c1e;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #bbc3d1;
+    border-radius: 0.375rem;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: #374151;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #99a5bc;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: #4b5563;
+  }
+
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(100%);
+  }
+
+  input[type="checkbox"] {
+    appearance: none;
+    background-color: #d1d5db;
+    border-radius: 9999px;
+    cursor: pointer;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .dark input[type="checkbox"] {
+    background-color: #374151;
+  }
+
+  input[type="checkbox"]:checked {
+    background-color: #3b82f6;
+  }
+}
+
+.bg-noise {
+  background: -webkit-canvas(noise);
+  background: url(#canvas);
+}
+
+.scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -4px;
+  height: 4px;
+  opacity: 0.33;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0),
+      rgba(0, 0, 0, 0.5) 90%,
+      rgba(0, 0, 0, 0)
+    ),
+    -webkit-canvas(noise);
+  animation: scanline 8s linear infinite;
+}
+
+.scanline.delay {
+  animation-delay: 4s;
+}
+
+@keyframes scanline {
+  0% {
+    top: -5px;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.funny-text {
+  animation: funnytext 4s ease-in-out infinite;
+}
+
+@keyframes funnytext {
+  0% {
+    color: rgba(0, 0, 0, 0.3);
+    filter: blur(3px);
+  }
+  30% {
+    color: rgba(0, 0, 0, 0.5);
+    filter: blur(1px);
+  }
+  65% {
+    color: rgba(0, 0, 0, 0.2);
+    filter: blur(5px);
+  }
+  100% {
+    color: rgba(0, 0, 0, 0.3);
+    filter: blur(3px);
+  }
+}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Removed from Project</title>
+  </head>
+  <body
+    style="
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    "
+  >
+    <div
+      style="
+        background: linear-gradient(to right, #ef4444, #dc2626);
+        padding: 20px;
+        text-align: center;
+      "
+    >
+      <h1 style="color: white; margin: 0">Project Update</h1>
+    </div>
+    <div
+      style="
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 0 0 5px 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      "
+    >
+      <p>Hello <strong><%= name %></strong>,</p>
+      <p>
+        We wanted to notify you that you have been removed from the project
+        <strong><%= projectName %></strong> in workspace
+        <strong><%= workspaceName %></strong>.
+      </p>
+      <div style="background-color: #fee2e2; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #dc2626;">Project Information</h3>
+        <p style="margin: 5px 0;"><strong>Project:</strong> <%= projectName %></p>
+        <p style="margin: 5px 0;"><strong>Workspace:</strong> <%= workspaceName %></p>
+        <% if (removedBy) { %>
+          <p style="margin: 5px 0;"><strong>Removed by:</strong> <%= removedBy %></p>
+        <% } %>
+      </div>
+      <p>
+        If you believe this is a mistake or have any questions, please contact
+        your workspace administrator.
+      </p>
+      <div style="text-align: center; margin: 30px 0">
+        <a
+          href="<%= dashboardUrl %>"
+          style="
+            background-color: #ef4444;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+          "
+          >Visit Dashboard</a
+        >
+      </div>
+      <p style="color: #666; font-size: 14px; margin-top: 30px;">
+        You can still access other projects you are a member of.
+      </p>
+    </div>
+  </body>
+</html>
