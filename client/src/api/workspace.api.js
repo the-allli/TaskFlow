@@ -99,3 +99,12 @@ export const fetchCommentsApi = (taskId) =>
 
 export const addCommentApi = (taskId, content) =>
   axiosInstance.post(`/workspace/tasks/${taskId}/comments`, { content });
+
+// Workspace Invites
+export const fetchInvitesApi = (workspaceId) =>
+  axiosInstance.get(`/workspace/${workspaceId}/invites`);
+
+export const resendInviteApi = (workspaceId, inviteId, role) =>
+  axiosInstance.patch(`/workspace/${workspaceId}/invites/${inviteId}/resend`, {
+    role,
+  });

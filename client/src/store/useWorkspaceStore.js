@@ -20,6 +20,8 @@ import {
   deleteTasksApi,
   fetchCommentsApi,
   addCommentApi,
+  fetchInvitesApi,
+  resendInviteApi,
 } from "../api/workspace.api";
 
 const useWorkspaceStore = create((set) => ({
@@ -476,6 +478,47 @@ const useWorkspaceStore = create((set) => ({
     try {
       const { data } = await addCommentApi(taskId, content);
       return { success: true, comment: data.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message,
+      };
+    }
+  },
+
+  fetchInvites: async (workspaceId) => {
+    try {
+      const { data } = await fetchInvitesApi(workspaceId);
+      const invites = data.data.invites || [];
+      set((state) => ({
+        currentWorkspace: {
+          ...state.currentWorkspace,
+          pendingInvites: invites,
+        },
+      }));
+      return { success: true, invites };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message,
+      };
+    }
+  },
+
+  resendInvite: async (workspaceId, inviteId, role) => {
+    try {
+      const { data } = await resendInviteApi(workspaceId, inviteId, role);
+      set((state) => ({
+        currentWorkspace: {
+          ...state.currentWorkspace,
+          pendingInvites: state.currentWorkspace.pendingInvites.map((invite) =>
+            invite._id === inviteId
+              ? { ...invite, role: { name: role }, sentAt: new Date().toISOString() }
+              : invite,
+          ),
+        },
+      }));
+      return { success: true, message: data.message };
     } catch (error) {
       return {
         success: false,

@@ -6,7 +6,7 @@ import { axiosInstance } from "../../../../lib/axios.js";
 import useClickOutside from "../../../../hooks/useClickOutside";
 
 const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
-  const { currentWorkspace } = useWorkspaceStore();
+  const { currentWorkspace, fetchInvites } = useWorkspaceStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -30,6 +30,8 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
       toast.success("Invitation email sent!");
       setFormData({ email: "", role: "manager" });
       setIsDialogOpen(false);
+      // Refresh the pending invites list
+      fetchInvites(currentWorkspace._id);
     } catch (error) {
       toast.error(
         error?.response?.data?.message || "Failed to send invitation.",

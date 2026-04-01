@@ -8,9 +8,11 @@ import {
   Trash2,
   Mail,
   UserCheck,
+  Clock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import InviteMemberDialog from "./components/InviteMemberDialog";
+import PendingInvites from "./components/PendingInvites";
 import useWorkspaceStore from "../../../store/useWorkspaceStore";
 import useAuthStore from "../../../store/useAuthStore";
 import { usePlanLimits } from "../../../hooks/usePlanLimits";
@@ -22,9 +24,10 @@ const Team = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [removingId, setRemovingId] = useState(null);
   const [updatingRoleId, setUpdatingRoleId] = useState(null);
+  const [activeTab, setActiveTab] = useState("members"); // 'members' or 'pending'
 
   const { authUser } = useAuthStore();
-  const { currentWorkspace, fetchMembers, removeMember, updateMemberRole } =
+  const { currentWorkspace, fetchMembers, removeMember, updateMemberRole, fetchInvites } =
     useWorkspaceStore();
   const { plan, limits, canCreate } = usePlanLimits();
 
@@ -42,8 +45,14 @@ const Team = () => {
   const canInviteMore = canCreate("maxMembersInAWorkspace", users.length);
 
   useEffect(() => {
-    if (workspaceId) fetchMembers(workspaceId);
-  }, [workspaceId]);
+    if (workspaceId) {
+      fetchMembers(workspaceId);
+      // Fetch pending invites if user has permission
+      if (isAdmin || isManager) {
+        fetchInvites(workspaceId);
+      }
+    }
+  }, [workspaceId, isAdmin, isManager]);
 
   const teamStats = useMemo(() => {
     const managerCount = users.filter((u) => u.role?.name === "manager").length;
@@ -185,7 +194,45 @@ const Team = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900/40 rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+      {/* Tabs */}
+      {canInviteOrManageTeam && (
+        <div className="flex gap-2 border-b border-gray-200 dark:border-zinc-800">
+          <button
+            onClick={() => setActiveTab("members")}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "members"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <UsersIcon className="size-4" />
+              Members ({users.length})
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab("pending")}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "pending"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Clock className="size-4" />
+              Pending Invites{" "}
+              {currentWorkspace?.pendingInvites?.length > 0 &&
+                `(${currentWorkspace.pendingInvites.length})`}
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* Tab Content */}
+      {activeTab === "pending" && canInviteOrManageTeam ? (
+        <PendingInvites />
+      ) : (
+        <div className="bg-white dark:bg-zinc-900/40 rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden shadow-sm">
         {filteredUsers.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center">
@@ -350,6 +397,7 @@ const Team = () => {
           </>
         )}
       </div>
+      )}
 
       <InviteMemberDialog
         isDialogOpen={isDialogOpen}

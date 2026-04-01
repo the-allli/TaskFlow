@@ -227,7 +227,7 @@ export const getMembers = async (req, res) => {
 
 export const inviteMember = async (req, res) => {
   const { workspaceId } = req.params;
-  const { email, role } = req.body;
+  const { email, role: roleName } = req.body;
   const requesterId = req.user.id;
 
   const workspace = await workspaceRepository.findWorkspaceById(workspaceId);
@@ -242,20 +242,60 @@ export const inviteMember = async (req, res) => {
     if (alreadyMember) throw new ApiError(400, "User is already a member.");
   }
 
+  // Get the role document
+  const role = await findRoleByName(roleName);
+  if (!role) throw new ApiError(400, "Invalid role");
+
   const inviter = await workspaceRepository.findUserById(requesterId);
   const inviteLink = `${process.env.CLIENT_URL}/dashboard/team/join/${workspace.invite_code}`;
 
-  await sendInviteEmail({
-    to: email,
-    workspaceName: workspace.name,
-    inviteLink,
-    invitedByName: inviter.name,
-    role,
-  });
+  // Check if there's already a pending invite for this email in this workspace
+  const existingInvite = await workspaceRepository.findInviteByWorkspaceAndEmail(
+    workspaceId,
+    email
+  );
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, null, "Invitation sent successfully."));
+  if (existingInvite) {
+    // Update existing invite with new role and resend email
+    await workspaceRepository.updateInvite(existingInvite._id, {
+      role: role._id,
+      sentAt: new Date(),
+    });
+
+    await sendInviteEmail({
+      to: email,
+      workspaceName: workspace.name,
+      inviteLink,
+      invitedByName: inviter.name,
+      role: roleName,
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "Invitation resent successfully."));
+  } else {
+    // Create new invite record
+    await workspaceRepository.createInvite({
+      workspaceId,
+      email,
+      role: role._id,
+      invitedBy: requesterId,
+      status: "pending",
+      sentAt: new Date(),
+    });
+
+    await sendInviteEmail({
+      to: email,
+      workspaceName: workspace.name,
+      inviteLink,
+      invitedByName: inviter.name,
+      role: roleName,
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "Invitation sent successfully."));
+  }
 };
 
 export const join_workspace = async (req, res) => {
@@ -273,6 +313,10 @@ export const join_workspace = async (req, res) => {
   if (alreadyMember)
     throw new ApiError(400, "You are already a member of this workspace.");
 
+  // Get user's email to find and delete the invite
+  const user = await workspaceRepository.findUserById(userId);
+  if (!user) throw new ApiError(404, "User not found.");
+
   const role = req.query.role || "dev";
   const urole = await findRoleByName(role);
   if (!urole) throw new ApiError(400, "Invalid role");
@@ -284,6 +328,15 @@ export const join_workspace = async (req, res) => {
   });
 
   await workspaceRepository.pushWorkspaceMember(workspace._id, member._id);
+
+  // Delete the invite entry when user joins
+  const invite = await workspaceRepository.findInviteByWorkspaceAndEmail(
+    workspace._id,
+    user.email
+  );
+  if (invite) {
+    await workspaceRepository.deleteInvite(invite._id);
+  }
 
   return res
     .status(200)
@@ -423,8 +476,70 @@ export const updateMemberRole = async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        new WorkspaceMemberDto(member),
+        { member },
         "Member role updated successfully.",
       ),
     );
+};
+
+// Workspace Invite Management Functions
+export const getInvites = async (req, res) => {
+  const { workspaceId } = req.params;
+
+  const workspace = await workspaceRepository.findWorkspaceById(workspaceId);
+  if (!workspace) throw new ApiError(404, "Workspace not found.");
+
+  const invites = await workspaceRepository.findPendingInvitesByWorkspace(workspaceId);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { invites },
+        "Pending invites fetched successfully.",
+      ),
+    );
+};
+
+export const resendInvite = async (req, res) => {
+  const { workspaceId, inviteId } = req.params;
+  const { role: roleName } = req.body;
+  const requesterId = req.user.id;
+
+  const workspace = await workspaceRepository.findWorkspaceById(workspaceId);
+  if (!workspace) throw new ApiError(404, "Workspace not found.");
+
+  const invite = await workspaceRepository.findInviteById(inviteId);
+  if (!invite) throw new ApiError(404, "Invite not found.");
+
+  if (invite.status !== "pending") {
+    throw new ApiError(400, "Invite is no longer pending.");
+  }
+
+  // Get the role document
+  const role = await findRoleByName(roleName);
+  if (!role) throw new ApiError(400, "Invalid role");
+
+  const inviter = await workspaceRepository.findUserById(requesterId);
+  const inviteLink = `${process.env.CLIENT_URL}/dashboard/team/join/${workspace.invite_code}`;
+
+  // Update invite with new role and timestamp
+  await workspaceRepository.updateInvite(inviteId, {
+    role: role._id,
+    sentAt: new Date(),
+  });
+
+  // Resend email with updated role
+  await sendInviteEmail({
+    to: invite.email,
+    workspaceName: workspace.name,
+    inviteLink,
+    invitedByName: inviter.name,
+    role: roleName,
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Invitation resent successfully."));
 };

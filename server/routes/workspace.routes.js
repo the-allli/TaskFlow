@@ -11,6 +11,7 @@ import {
   deleteWorkspace,
   updateMemberRole,
 } from "../controllers/workspace.controller.js";
+import { getInvites, resendInvite } from "../services/workspace.service.js";
 import {
   createProject,
   addProjectMember,
@@ -70,6 +71,20 @@ router.post(
   checkWorkspaceRole(["admin", "manager"]),
   checkPlanLimit("member"),
   inviteMember,
+);
+
+router.get(
+  "/:workspaceId/invites",
+  auth,
+  checkWorkspaceRole(["admin", "manager"]),
+  getInvites,
+);
+
+router.patch(
+  "/:workspaceId/invites/:inviteId/resend",
+  auth,
+  checkWorkspaceRole(["admin", "manager"]),
+  resendInvite,
 );
 
 router.post(
